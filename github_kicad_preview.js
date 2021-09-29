@@ -2,7 +2,7 @@
 // @name         KiCad Footprint Preview
 // @namespace    https://github.com/gsuberland/
 // @homepage     https://github.com/gsuberland/github_kicad_footprint_preview_tampermonkey
-// @version      0.4.3
+// @version      0.4.4
 // @description  Shows previews for KiCad footprints on GitHub.
 // @author       Graham Sutherland
 // @match        https://github.com/*kicad_mod*
@@ -489,6 +489,7 @@ class KiCadCircle extends KiCadElement
         this.end_y = parseFloat(endObj?.fields[1] ?? "NaN");
         this.width = parseFloat(widthObj?.fields[0] ?? "NaN");
         this.layerSpec = new KiCadLayerSpec(layerObj);
+        console.log(this);
     }
 
     getRadius()
@@ -508,8 +509,8 @@ class KiCadCircle extends KiCadElement
 
     rescale(scale)
     {
-        this.from_x *= scale;
-        this.from_y *= scale;
+        this.pos_x *= scale;
+        this.pos_y *= scale;
         this.end_x *= scale;
         this.end_y *= scale;
         this.width *= scale;

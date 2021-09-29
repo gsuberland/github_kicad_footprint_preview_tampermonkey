@@ -36,6 +36,10 @@ Issues and pull requests welcome, but keep in mind that this was just hacked tog
 
 ## Changelog
 
+**v0.4.4**
+
+Fixed a bug with `fp_circle` where scaling caused incorrect placement.
+
 **v0.4.3**
 
 Added support for `fp_circle`. 
