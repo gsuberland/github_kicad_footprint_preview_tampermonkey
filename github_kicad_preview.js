@@ -2,7 +2,7 @@
 // @name         KiCad Footprint Preview
 // @namespace    https://github.com/gsuberland/
 // @homepage     https://github.com/gsuberland/github_kicad_footprint_preview_tampermonkey
-// @version      0.4.0
+// @version      0.4.1
 // @description  Shows previews for KiCad footprints on GitHub.
 // @author       Graham Sutherland
 // @match        https://github.com/*kicad_mod*
@@ -64,12 +64,12 @@ class KiCadDrawingSettings
     {
         return [
             "Default",
-            "Courtyard",
-            "Fabrication",
             "Mask",
             "Copper",
             "Silkscreen",
-            "Paste"
+            "Paste",
+            "Fabrication",
+            "Courtyard",
         ];
     }
 }
@@ -225,7 +225,7 @@ class KiCadElement
         console.log("KiCadElement.rescale was not overridden in the child class.");
     }
 
-    draw(canvas, ctx)
+    draw(canvas, ctx, layerSide, layerType)
     {
         console.log("KiCadElement.draw was not overridden in the child class.");
     }
@@ -303,23 +303,17 @@ class KiCadLine extends KiCadElement
         this.width *= scale;
     }
 
-    draw(canvax, ctx)
+    draw(canvax, ctx, layerSide, layerType)
     {
-        for (const layerSide of KiCadDrawingSettings.LayerSideDrawOrder)
+        var currentLayer = this.layerSpec.layers.find(layer => (layer.side == layerSide) && (layer.type == layerType));
+        if (currentLayer)
         {
-            for (const layerType of KiCadDrawingSettings.LayerTypeDrawOrder)
-            {
-                var currentLayer = this.layerSpec.layers.find(layer => (layer.side == layerSide) && (layer.type == layerType));
-                if (currentLayer)
-                {
-                    ctx.beginPath();
-                    ctx.moveTo(this.from_x, this.from_y);
-                    ctx.lineTo(this.to_x, this.to_y);
-                    ctx.lineWidth = this.width;
-                    ctx.strokeStyle = currentLayer.getColour();
-                    ctx.stroke();
-                }
-            }
+            ctx.beginPath();
+            ctx.moveTo(this.from_x, this.from_y);
+            ctx.lineTo(this.to_x, this.to_y);
+            ctx.lineWidth = this.width;
+            ctx.strokeStyle = currentLayer.getColour();
+            ctx.stroke();
         }
     }
 }
@@ -408,43 +402,28 @@ class KiCadArc extends KiCadElement
         this.width *= scale;
     }
 
-    draw(canvax, ctx)
+    draw(canvax, ctx, layerSide, layerType)
     {
-        const dx = this.from_x - this.to_x;
-        const dy = this.from_y - this.to_y;
-        const theta = Math.atan2(dy, dx);
-        const angle = this.angle / (180/Math.PI);
-        const radius = Math.sqrt(Math.pow(this.from_x - this.to_x, 2) + Math.pow(this.from_y - this.to_y, 2));
-        for (const layerSide of KiCadDrawingSettings.LayerSideDrawOrder)
+        var currentLayer = this.layerSpec.layers.find(layer => (layer.side == layerSide) && (layer.type == layerType));
+        if (currentLayer)
         {
-            for (const layerType of KiCadDrawingSettings.LayerTypeDrawOrder)
+            const dx = this.from_x - this.to_x;
+            const dy = this.from_y - this.to_y;
+            const theta = Math.atan2(dy, dx);
+            const angle = this.angle / (180/Math.PI);
+            const radius = Math.sqrt(Math.pow(this.from_x - this.to_x, 2) + Math.pow(this.from_y - this.to_y, 2));
+            ctx.beginPath();
+            if (this.angle < 0)
             {
-                var currentLayer = this.layerSpec.layers.find(layer => (layer.side == layerSide) && (layer.type == layerType));
-                if (currentLayer)
-                {
-                    /*ctx.beginPath();
-                    ctx.moveTo(this.from_x, this.from_y);
-                    ctx.lineTo(this.to_x, this.to_y);
-                    ctx.lineWidth = this.width;
-                    ctx.strokeStyle = "brown";
-                    ctx.stroke();
-
-                    console.log(this.angle);
-                    console.log(theta * (180/Math.PI));*/
-                    ctx.beginPath();
-                    if (this.angle < 0)
-                    {
-                        ctx.arc(this.from_x, this.from_y, radius, (Math.PI) + theta, (Math.PI) + theta + angle, true);
-                    }
-                    else
-                    {
-                        ctx.arc(this.from_x, this.from_y, radius, (Math.PI) + theta, (Math.PI) + theta + angle, false);
-                    }
-                    ctx.lineWidth = this.width;
-                    ctx.strokeStyle = currentLayer.getColour();
-                    ctx.stroke();
-                }
+                ctx.arc(this.from_x, this.from_y, radius, (Math.PI) + theta, (Math.PI) + theta + angle, true);
             }
+            else
+            {
+                ctx.arc(this.from_x, this.from_y, radius, (Math.PI) + theta, (Math.PI) + theta + angle, false);
+            }
+            ctx.lineWidth = this.width;
+            ctx.strokeStyle = currentLayer.getColour();
+            ctx.stroke
         }
     }
 }
@@ -547,109 +526,103 @@ class KiCadPad extends KiCadElement
         this.drill *= scale;
     }
 
-    draw(canvax, ctx)
+    draw(canvax, ctx, layerSide, layerType)
     {
-        for (const layerSide of KiCadDrawingSettings.LayerSideDrawOrder)
+        var currentLayer = this.layerSpec.layers.find(layer => (layer.side == layerSide) && (layer.type == layerType));
+        if (currentLayer)
         {
-            for (const layerType of KiCadDrawingSettings.LayerTypeDrawOrder)
+            if (this.type != "np_thru_hole")
             {
-                var currentLayer = this.layerSpec.layers.find(layer => (layer.side == layerSide) && (layer.type == layerType));
-                if (currentLayer)
+                switch (this.shape)
                 {
-                    if (this.type != "np_thru_hole")
-                    {
-                        switch (this.shape)
+                    case "circle":
                         {
-                            case "circle":
-                                {
-                                    ctx.beginPath();
-                                    ctx.ellipse(this.pos_x, this.pos_y, this.size_x / 2, this.size_y / 2, 0, 0, Math.PI*2);
-                                    ctx.fillStyle = currentLayer.getColour();
-                                    ctx.fill();
-                                    break;
-                                }
-                            case "rect":
-                                {
-                                    ctx.beginPath();
-                                    // hack: support 90 degree rotation steps by just swapping size x/y
-                                    let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_y : this.size_x;
-                                    let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
-                                    ctx.rect(this.pos_x - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x, rsize_y);
-                                    ctx.fillStyle = currentLayer.getColour();
-                                    ctx.fill();
-                                    break;
-                                }
-                            case "roundrect":
-                                {
-                                    ctx.beginPath();
-                                    // hack: support 90 degree rotation steps by just swapping size x/y
-                                    let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_y : this.size_x;
-                                    let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
-                                    let r = this.rounding * Math.min(this.size_x, this.size_y);
-                                    KiCadCanvasHelper.roundedRect(ctx, this.pos_x - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x, rsize_y, r);
-                                    ctx.fillStyle = currentLayer.getColour();
-                                    ctx.fill();
-                                    break;
-                                }
-                            case "oval":
-                                {
-                                    let radius = Math.min(this.size_x, this.size_y) / 2;
-                                    // hack: support 90 degree rotation steps by just swapping size x/y
-                                    let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_y : this.size_x;
-                                    let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
-                                    if (rsize_x == rsize_y)
-                                    {
-                                        // not elongated, just draw it as a circle
-                                        ctx.beginPath();
-                                        ctx.ellipse(this.pos_x, this.pos_y, rsize_x / 2, rsize_y / 2, 0, 0, Math.PI*2);
-                                        ctx.fillStyle = currentLayer.getColour();
-                                        ctx.fill();
-                                    }
-                                    else if (rsize_y > rsize_x)
-                                    {
-                                        // elongated vertically
-                                        ctx.beginPath();
-                                        ctx.ellipse(this.pos_x, (this.pos_y - (rsize_y / 2)) + radius, radius, radius, 0, 0, Math.PI*2);
-                                        ctx.fillStyle = currentLayer.getColour();
-                                        ctx.fill();
-                                        ctx.beginPath();
-                                        ctx.ellipse(this.pos_x, (this.pos_y + (rsize_y / 2)) - radius, radius, radius, 0, 0, Math.PI*2);
-                                        ctx.fillStyle = currentLayer.getColour();
-                                        ctx.fill();
-                                        ctx.beginPath();
-                                        ctx.rect(this.pos_x - (rsize_x / 2), (this.pos_y + radius) - (rsize_y / 2), rsize_x, rsize_y - (radius * 2));
-                                        ctx.fillStyle = currentLayer.getColour();
-                                        ctx.fill();
-                                    }
-                                    else
-                                    {
-                                        // elongated horizontally
-                                        ctx.beginPath();
-                                        ctx.ellipse((this.pos_x - (rsize_x / 2)) + radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
-                                        ctx.fillStyle = currentLayer.getColour();
-                                        ctx.fill();
-                                        ctx.beginPath();
-                                        ctx.ellipse((this.pos_x + (rsize_x / 2)) - radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
-                                        ctx.fillStyle = currentLayer.getColour();
-                                        ctx.fill();
-                                        ctx.beginPath();
-                                        ctx.rect((this.pos_x + radius) - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x - (radius * 2), rsize_y);
-                                        ctx.fillStyle = currentLayer.getColour();
-                                        ctx.fill();
-                                    }
-                                    break;
-                                }
+                            ctx.beginPath();
+                            ctx.ellipse(this.pos_x, this.pos_y, this.size_x / 2, this.size_y / 2, 0, 0, Math.PI*2);
+                            ctx.fillStyle = currentLayer.getColour();
+                            ctx.fill();
+                            break;
                         }
-                    }
-                    if (this.type == "thru_hole" || this.type == "np_thru_hole")
-                    {
-                        ctx.beginPath();
-                        ctx.ellipse(this.pos_x, this.pos_y, this.drill / 2, this.drill / 2, 0, 0, Math.PI*2);
-                        ctx.lineWidth = 1;
-                        ctx.fillStyle = KiCadDrawingSettings.DrillColour;
-                        ctx.fill();
-                    }
+                    case "rect":
+                        {
+                            ctx.beginPath();
+                            // hack: support 90 degree rotation steps by just swapping size x/y
+                            let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_y : this.size_x;
+                            let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
+                            ctx.rect(this.pos_x - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x, rsize_y);
+                            ctx.fillStyle = currentLayer.getColour();
+                            ctx.fill();
+                            break;
+                        }
+                    case "roundrect":
+                        {
+                            ctx.beginPath();
+                            // hack: support 90 degree rotation steps by just swapping size x/y
+                            let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_y : this.size_x;
+                            let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
+                            let r = this.rounding * Math.min(this.size_x, this.size_y);
+                            KiCadCanvasHelper.roundedRect(ctx, this.pos_x - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x, rsize_y, r);
+                            ctx.fillStyle = currentLayer.getColour();
+                            ctx.fill();
+                            break;
+                        }
+                    case "oval":
+                        {
+                            let radius = Math.min(this.size_x, this.size_y) / 2;
+                            // hack: support 90 degree rotation steps by just swapping size x/y
+                            let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_y : this.size_x;
+                            let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
+                            if (rsize_x == rsize_y)
+                            {
+                                // not elongated, just draw it as a circle
+                                ctx.beginPath();
+                                ctx.ellipse(this.pos_x, this.pos_y, rsize_x / 2, rsize_y / 2, 0, 0, Math.PI*2);
+                                ctx.fillStyle = currentLayer.getColour();
+                                ctx.fill();
+                            }
+                            else if (rsize_y > rsize_x)
+                            {
+                                // elongated vertically
+                                ctx.beginPath();
+                                ctx.ellipse(this.pos_x, (this.pos_y - (rsize_y / 2)) + radius, radius, radius, 0, 0, Math.PI*2);
+                                ctx.fillStyle = currentLayer.getColour();
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.ellipse(this.pos_x, (this.pos_y + (rsize_y / 2)) - radius, radius, radius, 0, 0, Math.PI*2);
+                                ctx.fillStyle = currentLayer.getColour();
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.rect(this.pos_x - (rsize_x / 2), (this.pos_y + radius) - (rsize_y / 2), rsize_x, rsize_y - (radius * 2));
+                                ctx.fillStyle = currentLayer.getColour();
+                                ctx.fill();
+                            }
+                            else
+                            {
+                                // elongated horizontally
+                                ctx.beginPath();
+                                ctx.ellipse((this.pos_x - (rsize_x / 2)) + radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
+                                ctx.fillStyle = currentLayer.getColour();
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.ellipse((this.pos_x + (rsize_x / 2)) - radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
+                                ctx.fillStyle = currentLayer.getColour();
+                                ctx.fill();
+                                ctx.beginPath();
+                                ctx.rect((this.pos_x + radius) - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x - (radius * 2), rsize_y);
+                                ctx.fillStyle = currentLayer.getColour();
+                                ctx.fill();
+                            }
+                            break;
+                        }
                 }
+            }
+            if (this.type == "thru_hole" || this.type == "np_thru_hole")
+            {
+                ctx.beginPath();
+                ctx.ellipse(this.pos_x, this.pos_y, this.drill / 2, this.drill / 2, 0, 0, Math.PI*2);
+                ctx.lineWidth = 1;
+                ctx.fillStyle = KiCadDrawingSettings.DrillColour;
+                ctx.fill();
             }
         }
     }
@@ -878,11 +851,17 @@ function kicad_preview_canvas_handler(event) {
                     ctx.lineTo(canvas.width, y);
                     ctx.stroke();
                 }
-                ctx.globalAlpha = 1;
+                ctx.globalAlpha = 0.85;
 
-                for (const modelElement of model.elements)
+                for (const layerSide of KiCadDrawingSettings.LayerSideDrawOrder)
                 {
-                    modelElement.draw(canvas, ctx);
+                    for (const layerType of KiCadDrawingSettings.LayerTypeDrawOrder)
+                    {
+                        for (const modelElement of model.elements)
+                        {
+                            modelElement.draw(canvas, ctx, layerSide, layerType);
+                        }
+                    }
                 }
             });
         }

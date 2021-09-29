@@ -36,6 +36,14 @@ Issues and pull requests welcome, but keep in mind that this was just hacked tog
 
 ## Changelog
 
+**v0.4.1**
+
+Added a very slight amount of transparency to all drawing, to make it possible to see the shadow of bottom-layer elements under top-layer elements.
+
+Fixed layer ordering bug. Now each layer is drawn in sequence globally, instead of per-part. This also fixes a problem where drill holes weren't drawn on top in some cases.
+
+Re-ordered layers to better match what you'd see in KiCad.
+
 **v0.4.0**
 
 Major overhaul. Parsing now done in a lexer-like fashion, translated to a syntax tree. This is then built out into a model of the part using classes.
