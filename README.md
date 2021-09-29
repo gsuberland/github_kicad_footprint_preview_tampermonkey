@@ -4,19 +4,20 @@ This is a userscript for Tampermonkey that shows graphical previews of KiCad foo
 
 This works for any `.kicad_mod` file you view on GitHub.
 
-![Example image](example.jpg)
+![Example image](example.png)
 
 The script has been tested with Tampermonkey for Chrome. It should also work on Greasemonkey, and Chromium, but I have not tested it.
 
 ## Features
 
-This is a low-effort script that does most of its parsing with regex. It currently supports displaying:
+This script currently supports displaying:
 
-- Lines (`fp_line`) with the correct width
-- Circular and oval TH / SMD pads
-- Non-plated circular TH pads
-- Rectangular pads with optional thru-holes
-- Rounded rectangle pads (displayed as rectangles)
+- Lines and arcs (`fp_line`) with the correct width
+- Circular, ellipse, oval, rectangle, and rounded-rectangle TH / SMD pads
+- Non-plated TH pads
+- Separate colours for copper, silkscreen, paste, mask, fabrication, and courtyard
+- Separate colours for front, inner, and back layers
+- Background grid (one line = 1 unit in the file)
 
 This should be sufficient to quickly identify whether a part is the one you wanted.
 
@@ -24,11 +25,9 @@ This should be sufficient to quickly identify whether a part is the one you want
 
 Stuff with limited or no support:
 
-- Ovals are displayed as ellipses, not slots
-- Arcs
 - Text
-- Rotation values in `at` spec - these are currently ignored when present
-- Layers - all lines are shown as black, all pads are currently shown as red
+- Pad rotation values outside of 90 degree steps
+- Custom pad shapes (currently not shown at all)
 - Models - this will probably never be supported
 
 ## Contributing
@@ -36,6 +35,18 @@ Stuff with limited or no support:
 Issues and pull requests welcome, but keep in mind that this was just hacked together in an evening because it was an interesting challenge, so I probably won't invest too much more time in it.
 
 ## Changelog
+
+**v0.4.0**
+
+Major overhaul. Parsing now done in a lexer-like fashion, translated to a syntax tree. This is then built out into a model of the part using classes.
+
+Added support for arcs.
+
+Added support for layers.
+
+Added support for oval (slot) shaped pads.
+
+Added limited support for pad rotation (90 degree steps only).
 
 **v0.3.3**
 
