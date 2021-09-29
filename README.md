@@ -12,7 +12,7 @@ The script has been tested with Tampermonkey for Chrome. It should also work on 
 
 This script currently supports displaying:
 
-- Lines and arcs with the correct width
+- Lines, circles, and arcs with the correct width
 - Circular, ellipse, oval, rectangle, and rounded-rectangle TH / SMD pads
 - Non-plated TH pads
 - Separate colours for copper, silkscreen, paste, mask, fabrication, and courtyard
@@ -35,6 +35,12 @@ Stuff with limited or no support:
 Issues and pull requests welcome, but keep in mind that this was just hacked together in an evening because it was an interesting challenge, so I probably won't invest too much more time in it.
 
 ## Changelog
+
+**v0.4.3**
+
+Added support for `fp_circle`. 
+
+Fixed a minor bug with TH part drill drawing.
 
 **v0.4.2**
 

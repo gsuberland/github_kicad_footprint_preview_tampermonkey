@@ -2,7 +2,7 @@
 // @name         KiCad Footprint Preview
 // @namespace    https://github.com/gsuberland/
 // @homepage     https://github.com/gsuberland/github_kicad_footprint_preview_tampermonkey
-// @version      0.4.2
+// @version      0.4.3
 // @description  Shows previews for KiCad footprints on GitHub.
 // @author       Graham Sutherland
 // @match        https://github.com/*kicad_mod*
@@ -438,6 +438,97 @@ class KiCadArc extends KiCadElement
     }
 }
 
+/* CIRCLE */
+
+class KiCadCircle extends KiCadElement
+{
+    pos_x;
+    pos_y;
+    end_x;
+    end_y;
+    width;
+
+    constructor(obj)
+    {
+        super();
+        if (obj === null)
+        {
+            console.log("Error: attempted to construct KiCadCircle from null.");
+            return;
+        }
+        if (obj.type !== "fp_circle")
+        {
+            console.log("Error: attempted to construct KiCadCircle from invalid input type.");
+            return;
+        }
+
+        let centerObj = this.findChild(obj, "center", true);
+        let endObj = this.findChild(obj, "end", true);
+        let widthObj = this.findChild(obj, "width", true);
+        let layerObj = this.findChild(obj, ["layer", "layers"], false);
+
+        if ((centerObj?.fields?.length ?? 0) < 2)
+        {
+            console.log("fp_circle has insufficient values in 'center' specifier.");
+            return;
+        }
+        if ((endObj?.fields?.length ?? 0) < 2)
+        {
+            console.log("fp_circle has insufficient values in 'end' specifier.");
+            return;
+        }
+        if ((widthObj?.fields?.length ?? 0) < 1)
+        {
+            console.log("fp_circle has insufficient values in 'width' specifier.");
+            return;
+        }
+
+        this.pos_x = parseFloat(centerObj?.fields[0] ?? "NaN");
+        this.pos_y = parseFloat(centerObj?.fields[1] ?? "NaN");
+        this.end_x = parseFloat(endObj?.fields[0] ?? "NaN");
+        this.end_y = parseFloat(endObj?.fields[1] ?? "NaN");
+        this.width = parseFloat(widthObj?.fields[0] ?? "NaN");
+        this.layerSpec = new KiCadLayerSpec(layerObj);
+    }
+
+    getRadius()
+    {
+        return Math.sqrt(Math.pow(this.pos_x - this.end_x, 2) + Math.pow(this.pos_y - this.end_y, 2)) / 2;
+    }
+
+    getExtents()
+    {
+        return {
+            min_x: Math.min(this.from_x - this.getRadius(), this.end_x - this.getRadius()),
+            max_x: Math.max(this.from_x + this.getRadius(), this.end_x + this.getRadius()),
+            min_y: Math.min(this.from_y - this.getRadius(), this.end_y - this.getRadius()),
+            max_y: Math.max(this.from_y + this.getRadius(), this.end_y + this.getRadius()),
+        };
+    }
+
+    rescale(scale)
+    {
+        this.from_x *= scale;
+        this.from_y *= scale;
+        this.end_x *= scale;
+        this.end_y *= scale;
+        this.width *= scale;
+    }
+
+    draw(canvax, ctx, layerSide, layerType)
+    {
+        var currentLayer = this.layerSpec.layers.find(layer => (layer.side == layerSide) && (layer.type == layerType));
+        if (currentLayer)
+        {
+            ctx.beginPath();
+            ctx.ellipse(this.pos_x, this.pos_y, this.getRadius(), this.getRadius(), 0, 0, Math.PI*2);
+            ctx.lineWidth = this.width;
+            ctx.strokeStyle = currentLayer.getColour();
+            ctx.stroke();
+        }
+    }
+}
+
 /* PAD */
 
 class KiCadPad extends KiCadElement
@@ -493,7 +584,7 @@ class KiCadPad extends KiCadElement
         this.type = obj.fields[1];
         this.shape = obj.fields[2];
 
-        if (this.type != "smd")
+        if (this.type == "thru_hole" || this.type == "np_thru_hole")
         {
             if ((drillObj?.fields?.length ?? 0) < 1)
             {
@@ -532,10 +623,10 @@ class KiCadPad extends KiCadElement
     getExtents()
     {
         return {
-            min_x: this.pos_x - (Math.max(this.size_x, this.drill_x) / 2),
-            max_x: this.pos_x + (Math.max(this.size_x, this.drill_x) / 2),
-            min_y: this.pos_y - (Math.max(this.size_y, this.drill_y) / 2),
-            max_y: this.pos_y + (Math.max(this.size_y, this.drill_y) / 2),
+            min_x: this.pos_x - (Math.max(this.size_x, this.drill_x)),
+            max_x: this.pos_x + (Math.max(this.size_x, this.drill_x)),
+            min_y: this.pos_y - (Math.max(this.size_y, this.drill_y)),
+            max_y: this.pos_y + (Math.max(this.size_y, this.drill_y)),
         };
     }
 
@@ -757,6 +848,9 @@ function kicad_syntax_to_model(moduleObject)
                 break;
             case "fp_arc":
                 module.elements.push(new KiCadArc(childObject));
+                break;
+            case "fp_circle":
+                module.elements.push(new KiCadCircle(childObject));
                 break;
             case "pad":
                 module.elements.push(new KiCadPad(childObject));
