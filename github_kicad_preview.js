@@ -2,7 +2,7 @@
 // @name         KiCad Footprint Preview
 // @namespace    https://github.com/gsuberland/
 // @homepage     https://github.com/gsuberland/github_kicad_footprint_preview_tampermonkey
-// @version      0.1
+// @version      0.2
 // @description  Shows previews for KiCad footprints on GitHub.
 // @author       Graham Sutherland
 // @match        https://github.com/*kicad_mod*
@@ -56,7 +56,7 @@ function kicad_preview_canvas_handler(event) {
             // grab the data from the response
             response.text().then(function(code) {
                 const fp_line_re = /\(fp_line\s+\(start\s+(?<from_x>-?\d+(?:\.\d+)?)\s+(?<from_y>-?\d+(?:\.\d+)?)\)\s+\(end\s+(?<to_x>-?\d+(?:\.\d+)?)\s+(?<to_y>-?\d+(?:\.\d+)?)\).*\(width\s(?<width>-?\d+(?:\.\d+)?)\)/g;
-                const fp_pad_circle_re = /\(pad.*\s+thru_hole\s+circle\s+\(at\s+(?<pos_x>-?\d+(?:\.\d+)?)\s+(?<pos_y>-?\d+(?:\.\d+)?)\)\s+\(size\s+(?<size_x>-?\d+(?:\.\d+)?)\s+(?<size_y>-?\d+(?:\.\d+)?)\)\s+\(drill\s+(?<drill>-?\d+(?:\.\d+)?)\)/g;
+                const fp_pad_circle_re = /\(pad.*\s+(?:thru_hole|smd)\s+circle\s+\(at\s+(?<pos_x>-?\d+(?:\.\d+)?)\s+(?<pos_y>-?\d+(?:\.\d+)?)\)\s+\(size\s+(?<size_x>-?\d+(?:\.\d+)?)\s+(?<size_y>-?\d+(?:\.\d+)?)\)(?:\s+\(drill\s+(?<drill>-?\d+(?:\.\d+)?)\))?/g;
                 const fp_pad_rect_re = /\(pad.*\s+rect\s+\(at\s+(?<pos_x>-?\d+(?:\.\d+)?)\s+(?<pos_y>-?\d+(?:\.\d+)?)\)\s+\(size\s+(?<size_x>-?\d+(?:\.\d+)?)\s+(?<size_y>-?\d+(?:\.\d+)?)\)(?:\s+\(drill\s+(?<drill>-?\d+(?:\.\d+)?)\))?/g;
 
                 if (document.getElementById('kicad_preview_container') === null)
@@ -122,7 +122,7 @@ function kicad_preview_canvas_handler(event) {
                         pos_y: parseFloat(match.groups.pos_y),
                         size_x: parseFloat(match.groups.size_x),
                         size_y: parseFloat(match.groups.size_y),
-                        drill: parseFloat(match.groups.drill)
+                        drill: parseFloat(match.groups.drill ?? "0")
                     };
                     min_x = Math.min(min_x, circle.pos_x - Math.max(circle.size_x, circle.drill));
                     min_y = Math.min(min_y, circle.pos_y - Math.max(circle.size_y, circle.drill));
@@ -232,12 +232,15 @@ function kicad_preview_canvas_handler(event) {
                     ctx.fillStyle = 'red';
                     ctx.fill();
                     ctx.stroke();
-                    ctx.beginPath();
-                    ctx.ellipse(circle.pos_x, circle.pos_y, circle.drill / 2, circle.drill / 2, 0, 0, Math.PI*2);
-                    ctx.lineWidth = 1;
-                    ctx.fillStyle = 'grey';
-                    ctx.fill();
-                    ctx.stroke();
+                    if (circle.drill > 0.00001)
+                    {
+                        ctx.beginPath();
+                        ctx.ellipse(circle.pos_x, circle.pos_y, circle.drill / 2, circle.drill / 2, 0, 0, Math.PI*2);
+                        ctx.lineWidth = 1;
+                        ctx.fillStyle = 'grey';
+                        ctx.fill();
+                        ctx.stroke();
+                    }
                 }
                 // draw rectangles
                 for (const rect of rects)

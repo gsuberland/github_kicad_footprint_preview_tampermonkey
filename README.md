@@ -10,6 +10,7 @@ This is a low-effort script that does most of its parsing with regex. It current
 
 - Lines (`fp_line`) with the correct width.
 - Circular thru-hole pads.
+- Circular SMD pads.
 - Rectangular pads with optional thru-holes.
 
 This should be sufficient to quickly identify whether a part is the one you wanted.
