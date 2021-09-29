@@ -449,7 +449,9 @@ class KiCadPad extends KiCadElement
     rotation;
     size_x;
     size_y;
-    drill;
+    drill_type = "normal";
+    drill_x;
+    drill_y = 0;
     rounding = 0;
 
     constructor(obj)
@@ -512,7 +514,17 @@ class KiCadPad extends KiCadElement
         this.size_y = parseFloat(sizeObj?.fields[1] ?? "NaN");
         if (this.type != "smd")
         {
-            this.drill = parseFloat(drillObj?.fields[0] ?? "NaN");
+            if (drillObj?.fields[0] == "oval")
+            {
+                this.drill_x = parseFloat(drillObj?.fields[1] ?? "NaN");
+                this.drill_y = parseFloat(drillObj?.fields[2] ?? "NaN");
+                this.drill_type = "oval";
+            }
+            else
+            {
+                this.drill_x = parseFloat(drillObj?.fields[0] ?? "NaN");
+                this.drill_y = parseFloat(drillObj?.fields[0] ?? "NaN");
+            }
         }
         this.layerSpec = new KiCadLayerSpec(layerObj);
     }
@@ -520,10 +532,10 @@ class KiCadPad extends KiCadElement
     getExtents()
     {
         return {
-            min_x: this.pos_x - (Math.max(this.size_x, this.drill) / 2),
-            max_x: this.pos_x + (Math.max(this.size_x, this.drill) / 2),
-            min_y: this.pos_y - (Math.max(this.size_y, this.drill) / 2),
-            max_y: this.pos_y + (Math.max(this.size_y, this.drill) / 2),
+            min_x: this.pos_x - (Math.max(this.size_x, this.drill_x) / 2),
+            max_x: this.pos_x + (Math.max(this.size_x, this.drill_x) / 2),
+            min_y: this.pos_y - (Math.max(this.size_y, this.drill_y) / 2),
+            max_y: this.pos_y + (Math.max(this.size_y, this.drill_y) / 2),
         };
     }
 
@@ -533,7 +545,8 @@ class KiCadPad extends KiCadElement
         this.pos_y *= scale;
         this.size_x *= scale;
         this.size_y *= scale;
-        this.drill *= scale;
+        this.drill_x *= scale;
+        this.drill_y *= scale;
     }
 
     draw(canvax, ctx, layerSide, layerType)
@@ -628,11 +641,52 @@ class KiCadPad extends KiCadElement
             }
             if (this.type == "thru_hole" || this.type == "np_thru_hole")
             {
-                ctx.beginPath();
-                ctx.ellipse(this.pos_x, this.pos_y, this.drill / 2, this.drill / 2, 0, 0, Math.PI*2);
-                ctx.lineWidth = 1;
                 ctx.fillStyle = KiCadDrawingSettings.DrillColour;
-                ctx.fill();
+                if (this.drill_type == "normal")
+                {
+                    ctx.beginPath();
+                    ctx.ellipse(this.pos_x, this.pos_y, this.drill_x / 2, this.drill_y / 2, 0, 0, Math.PI*2);
+                    ctx.fill();
+                }
+                else if (this.drill_type == "oval")
+                {
+                    let radius = Math.min(this.drill_x, this.drill_y) / 2;
+                    let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.drill_y : this.drill_x;
+                    let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.drill_x : this.drill_y;
+                    if (rsize_x == rsize_y)
+                    {
+                        // not elongated, just draw it as a circle
+                        ctx.beginPath();
+                        ctx.ellipse(this.pos_x, this.pos_y, rsize_x / 2, rsize_y / 2, 0, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                    else if (rsize_y > rsize_x)
+                    {
+                        // elongated vertically
+                        ctx.beginPath();
+                        ctx.ellipse(this.pos_x, (this.pos_y - (rsize_y / 2)) + radius, radius, radius, 0, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.ellipse(this.pos_x, (this.pos_y + (rsize_y / 2)) - radius, radius, radius, 0, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.rect(this.pos_x - (rsize_x / 2), (this.pos_y + radius) - (rsize_y / 2), rsize_x, rsize_y - (radius * 2));
+                        ctx.fill();
+                    }
+                    else
+                    {
+                        // elongated horizontally
+                        ctx.beginPath();
+                        ctx.ellipse((this.pos_x - (rsize_x / 2)) + radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.ellipse((this.pos_x + (rsize_x / 2)) - radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.rect((this.pos_x + radius) - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x - (radius * 2), rsize_y);
+                        ctx.fill();
+                    }
+                }
             }
         }
     }
