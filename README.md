@@ -12,6 +12,7 @@ This is a low-effort script that does most of its parsing with regex. It current
 - Circular thru-hole pads.
 - Circular SMD pads.
 - Rectangular pads with optional thru-holes.
+- Rounded rectangle pads (displayed as rectangles)
 
 This should be sufficient to quickly identify whether a part is the one you wanted.
 
