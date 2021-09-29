@@ -2,7 +2,7 @@
 // @name         KiCad Footprint Preview
 // @namespace    https://github.com/gsuberland/
 // @homepage     https://github.com/gsuberland/github_kicad_footprint_preview_tampermonkey
-// @version      0.3
+// @version      0.3.1
 // @description  Shows previews for KiCad footprints on GitHub.
 // @author       Graham Sutherland
 // @match        https://github.com/*kicad_mod*
@@ -56,7 +56,7 @@ function kicad_preview_canvas_handler(event) {
             // grab the data from the response
             response.text().then(function(code) {
                 const fp_line_re = /\(fp_line\s+\(start\s+(?<from_x>-?\d+(?:\.\d+)?)\s+(?<from_y>-?\d+(?:\.\d+)?)\)\s+\(end\s+(?<to_x>-?\d+(?:\.\d+)?)\s+(?<to_y>-?\d+(?:\.\d+)?)\).*\(width\s(?<width>-?\d+(?:\.\d+)?)\)/g;
-                const fp_pad_circle_re = /\(pad.*\s+(?:thru_hole|smd)\s+circle\s+\(at\s+(?<pos_x>-?\d+(?:\.\d+)?)\s+(?<pos_y>-?\d+(?:\.\d+)?)\)\s+\(size\s+(?<size_x>-?\d+(?:\.\d+)?)\s+(?<size_y>-?\d+(?:\.\d+)?)\)(?:\s+\(drill\s+(?<drill>-?\d+(?:\.\d+)?)\))?/g;
+                const fp_pad_circle_re = /\(pad.*\s+(?:np_thru_hole|thru_hole|smd)\s+circle\s+\(at\s+(?<pos_x>-?\d+(?:\.\d+)?)\s+(?<pos_y>-?\d+(?:\.\d+)?)\)\s+\(size\s+(?<size_x>-?\d+(?:\.\d+)?)\s+(?<size_y>-?\d+(?:\.\d+)?)\)(?:\s+\(drill\s+(?<drill>-?\d+(?:\.\d+)?)\))?/g;
                 const fp_pad_rect_re = /\(pad.*\s+(?:round)?rect\s+\(at\s+(?<pos_x>-?\d+(?:\.\d+)?)\s+(?<pos_y>-?\d+(?:\.\d+)?)\)\s+\(size\s+(?<size_x>-?\d+(?:\.\d+)?)\s+(?<size_y>-?\d+(?:\.\d+)?)\)(?:\s+\(drill\s+(?<drill>-?\d+(?:\.\d+)?)\))?/g;
 
                 if (document.getElementById('kicad_preview_container') === null)
