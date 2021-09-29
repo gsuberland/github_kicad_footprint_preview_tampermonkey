@@ -2,7 +2,7 @@
 // @name         KiCad Footprint Preview
 // @namespace    https://github.com/gsuberland/
 // @homepage     https://github.com/gsuberland/github_kicad_footprint_preview_tampermonkey
-// @version      0.4.1
+// @version      0.4.2
 // @description  Shows previews for KiCad footprints on GitHub.
 // @author       Graham Sutherland
 // @match        https://github.com/*kicad_mod*
@@ -20,30 +20,40 @@ class KiCadDrawingSettings
         return {
             Back: {
                 Default: "darkgrey",
-                Copper: "blue",
+                Copper: "rgb(0, 132, 0)",
                 Courtyard: "gray",
-                Silkscreen: "brown",
-                Fabrication: "darkgreen",
-                Mask: "indigo",
-                Paste: "#FFFFFF33"
+                Silkscreen: "rgb(132, 0, 132)",
+                Fabrication: "rgb(0, 0, 132)",
+                Mask: "rgb(132, 132, 0)",
+                Paste: "rgb(0, 194, 194)",
+                PadTH: "rgb(194, 194, 0)",
             },
             Inner: {
                 Default: "gray",
-                Copper: "magenta",
+                Copper: "rgb(194, 194, 0)",
                 Courtyard: "none",
                 Silkscreen: "none",
                 Fabrication: "none",
+                Mask: "none",
+                Paste: "none",
+                PadTH: "none",
             },
             Front: {
                 Default: "white",
-                Copper: "red",
-                Courtyard: "lightgray",
-                Silkscreen: "gold",
-                Fabrication: "green",
-                Mask: "purple",
-                Paste: "#FFFFFF55"
+                Copper: "rgb(132, 0, 0)",
+                Courtyard: "rgb(194, 194, 194)",
+                Silkscreen: "rgb(0, 132, 132)",
+                Fabrication: "rgb(132, 132, 132)",
+                Mask: "rgb(132, 0, 132)",
+                Paste: "rgb(132, 0, 0)",
+                PadTH: "rgb(194, 194, 0)",
             }
         };
+    }
+
+    static get Transparency()
+    {
+        return 0.95;
     }
 
     static get DrillColour()
@@ -533,13 +543,22 @@ class KiCadPad extends KiCadElement
         {
             if (this.type != "np_thru_hole")
             {
+                if (this.type == "thru_hole" && layerType == "Copper")
+                {
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = KiCadDrawingSettings.LayerColours[layerSide]["PadTH"];
+                }
+                else
+                {
+                    ctx.globalAlpha = KiCadDrawingSettings.Transparency;
+                    ctx.fillStyle = currentLayer.getColour();
+                }
                 switch (this.shape)
                 {
                     case "circle":
                         {
                             ctx.beginPath();
                             ctx.ellipse(this.pos_x, this.pos_y, this.size_x / 2, this.size_y / 2, 0, 0, Math.PI*2);
-                            ctx.fillStyle = currentLayer.getColour();
                             ctx.fill();
                             break;
                         }
@@ -550,7 +569,6 @@ class KiCadPad extends KiCadElement
                             let rsize_x = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_y : this.size_x;
                             let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
                             ctx.rect(this.pos_x - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x, rsize_y);
-                            ctx.fillStyle = currentLayer.getColour();
                             ctx.fill();
                             break;
                         }
@@ -562,7 +580,6 @@ class KiCadPad extends KiCadElement
                             let rsize_y = ((this.rotation == 90) || (this.rotation == 270)) ? this.size_x : this.size_y;
                             let r = this.rounding * Math.min(this.size_x, this.size_y);
                             KiCadCanvasHelper.roundedRect(ctx, this.pos_x - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x, rsize_y, r);
-                            ctx.fillStyle = currentLayer.getColour();
                             ctx.fill();
                             break;
                         }
@@ -577,7 +594,6 @@ class KiCadPad extends KiCadElement
                                 // not elongated, just draw it as a circle
                                 ctx.beginPath();
                                 ctx.ellipse(this.pos_x, this.pos_y, rsize_x / 2, rsize_y / 2, 0, 0, Math.PI*2);
-                                ctx.fillStyle = currentLayer.getColour();
                                 ctx.fill();
                             }
                             else if (rsize_y > rsize_x)
@@ -585,15 +601,12 @@ class KiCadPad extends KiCadElement
                                 // elongated vertically
                                 ctx.beginPath();
                                 ctx.ellipse(this.pos_x, (this.pos_y - (rsize_y / 2)) + radius, radius, radius, 0, 0, Math.PI*2);
-                                ctx.fillStyle = currentLayer.getColour();
                                 ctx.fill();
                                 ctx.beginPath();
                                 ctx.ellipse(this.pos_x, (this.pos_y + (rsize_y / 2)) - radius, radius, radius, 0, 0, Math.PI*2);
-                                ctx.fillStyle = currentLayer.getColour();
                                 ctx.fill();
                                 ctx.beginPath();
                                 ctx.rect(this.pos_x - (rsize_x / 2), (this.pos_y + radius) - (rsize_y / 2), rsize_x, rsize_y - (radius * 2));
-                                ctx.fillStyle = currentLayer.getColour();
                                 ctx.fill();
                             }
                             else
@@ -601,15 +614,12 @@ class KiCadPad extends KiCadElement
                                 // elongated horizontally
                                 ctx.beginPath();
                                 ctx.ellipse((this.pos_x - (rsize_x / 2)) + radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
-                                ctx.fillStyle = currentLayer.getColour();
                                 ctx.fill();
                                 ctx.beginPath();
                                 ctx.ellipse((this.pos_x + (rsize_x / 2)) - radius, this.pos_y, radius, radius, 0, 0, Math.PI*2);
-                                ctx.fillStyle = currentLayer.getColour();
                                 ctx.fill();
                                 ctx.beginPath();
                                 ctx.rect((this.pos_x + radius) - (rsize_x / 2), this.pos_y - (rsize_y / 2), rsize_x - (radius * 2), rsize_y);
-                                ctx.fillStyle = currentLayer.getColour();
                                 ctx.fill();
                             }
                             break;
@@ -851,7 +861,7 @@ function kicad_preview_canvas_handler(event) {
                     ctx.lineTo(canvas.width, y);
                     ctx.stroke();
                 }
-                ctx.globalAlpha = 0.85;
+                ctx.globalAlpha = KiCadDrawingSettings.Transparency;
 
                 for (const layerSide of KiCadDrawingSettings.LayerSideDrawOrder)
                 {

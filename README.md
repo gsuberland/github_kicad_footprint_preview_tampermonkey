@@ -36,6 +36,10 @@ Issues and pull requests welcome, but keep in mind that this was just hacked tog
 
 ## Changelog
 
+**v0.4.2**
+
+Switched colour scheme to match KiCad Classic.
+
 **v0.4.1**
 
 Added a very slight amount of transparency to all drawing, to make it possible to see the shadow of bottom-layer elements under top-layer elements.
