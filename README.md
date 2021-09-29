@@ -12,7 +12,7 @@ The script has been tested with Tampermonkey for Chrome. It should also work on 
 
 This script currently supports displaying:
 
-- Lines and arcs (`fp_line`) with the correct width
+- Lines and arcs with the correct width
 - Circular, ellipse, oval, rectangle, and rounded-rectangle TH / SMD pads
 - Non-plated TH pads
 - Separate colours for copper, silkscreen, paste, mask, fabrication, and courtyard
