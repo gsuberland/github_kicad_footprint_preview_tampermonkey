@@ -12,10 +12,10 @@ The script has been tested with Tampermonkey for Chrome. It should also work on 
 
 This script currently supports displaying:
 
-- Lines, circles, and arcs with the correct width
+- Lines, circles, and arcs
 - Circular, ellipse, oval, rectangle, and rounded-rectangle TH / SMD pads
 - Non-plated TH pads
-- Separate colours for copper, silkscreen, paste, mask, fabrication, and courtyard
+- Separate colours for TH pads, copper, silkscreen, paste, mask, fabrication, and courtyard
 - Separate colours for front, inner, and back layers
 - Background grid (one line = 1 unit in the file)
 
@@ -32,7 +32,7 @@ Stuff with limited or no support:
 
 ## Contributing
 
-Issues and pull requests welcome, but keep in mind that this was just hacked together in an evening because it was an interesting challenge, so I probably won't invest too much more time in it.
+Issues and pull requests welcome. Be forewarned: I'm incredibly ADHD, so I don't know how much time I'll be able to invest in maintaining this.
 
 ## Changelog
 
